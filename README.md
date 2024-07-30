@@ -1,1 +1,1 @@
-# SecureFileSharing
+SecureFileSharing is a Rust-based web application designed to offer a highly secure and efficient platform for sharing files over the web. Utilizing the robust Actix Web framework, this project boasts a lightweight and lightning-fast server setup, emphasizing security and ease of use. With carefully configured routes and a straightforward server initialization process, SecureFileSharing aims to provide a seamless user experience for both uploading and sharing files securely across the internet.
