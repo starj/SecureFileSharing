@@ -3,34 +3,34 @@ use dotenv::dotenv;
 use std::env;
 
 #[post("/upload")]
-async fn upload_file(file: web::Json<FileUpload>) -> impl Responder {
-    HttpResponse::Ok().body(format!("File {} uploaded successfully!", file.filename))
+async fn upload(file: web::Json<FileDetails>) -> impl Responder {
+    HttpResponse::Ok().body(format!("File '{}' uploaded successfully!", file.name))
 }
 
 #[post("/download")]
-async fn download_file(file: web::Json<FileRequest>) -> impl Responder {
-    HttpResponse::Ok().body(format!("File {} downloaded successfully!", file.filename))
+async fn download(file: web::Json<FetchRequest>) -> impl Responder {
+    HttpResponse::Ok().body(format!("File '{}' ready for download!", file.name))
 }
 
 #[post("/share")]
-async fn share_file(file: web::Json<FileShare>) -> impl Responder {
-    HttpResponse::Ok().body(format!("File {} shared successfully! Link: {}", file.filename, file.link))
+async fn share(file: web::Json<ShareDetails>) -> impl Responder {
+    HttpResponse::Ok().body(format!("File '{}' shared successfully! Access using: {}", file.name, file.url))
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct FileUpload {
-    filename: String,
+struct FileDetails {
+    name: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct FileRequest {
-    filename: String,
+struct FetchRequest {
+    name: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct FileShare {
-    filename: String,
-    link: String,
+struct ShareDetails {
+    name: String,
+    url: String,
 }
 
 #[actix_web::main]
@@ -39,14 +39,14 @@ async fn main() -> std::io::Result<()> {
 
     let server = HttpServer::new(|| {
         App::new()
-            .service(upload_file)
-            .service(download_file)
-            .service(share_file)
+            .service(upload)
+            .service(download)
+            .service(share)
     });
 
     let server_address = env::var("SERVER_ADDRESS").unwrap_or_else(|_| "127.0.0.1:8080".to_string());
 
-    println!("Running server at http://{}", server_address);
+    println!("Server running at http://{}", server_address);
 
     server.bind(server_address)?.run().await
 }
