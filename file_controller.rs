@@ -1,33 +1,56 @@
-use actix_web::{post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{post, web, App, HttpResponse, HttpServer, Responder, http::StatusCode, error::ResponseError};
+use actix_web::dev::HttpResponseBuilder;
 use dotenv::dotenv;
-use std::env;
+use serde::{Deserialize, Serialize};
+use std::{env, fmt};
 
 #[post("/upload")]
-async fn upload(file: web::Json<FileDetails>) -> impl Responder {
-    HttpResponse::Ok().body(format!("File '{}' uploaded successfully!", file.name))
+async fn upload(file: web::Json<FileDetails>) -> Result<HttpResponse, ServiceError> {
+    Ok(HttpResponse::Ok().body(format!("File '{}' uploaded successfully!", file.name)))
 }
 
 #[post("/download")]
-async fn download(file: web::Json<FetchRequest>) -> impl Responder {
-    HttpResponse::Ok().body(format!("File '{}' ready for download!", file.name))
+async fn download(file: web::Json<FetchRequest>) -> Result<HttpResponse, ServiceError> {
+    Ok(HttpResponse::Ok().body(format!("File '{}' ready for download!", file.name)))
 }
 
 #[post("/share")]
-async fn share(file: web::Json<ShareDetails>) -> impl Responder {
-    HttpResponse::Ok().body(format!("File '{}' shared successfully! Access using: {}", file.name, file.url))
+async fn share(file: web::Json<ShareDetails>) -> Result<HttpResponse, ServiceError> {
+    Ok(HttpResponse::Ok().body(format!("File '{}' shared successfully! Access using: {}", file.name, file.url)))
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug)]
+struct ServiceError {
+    message: String,
+}
+
+impl fmt::Display for ServiceError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl ResponseError for ServiceError {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::INTERNAL_SERVER_ERROR
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        HttpResponseBuilder::new(self.status_code()).body(self.message.clone())
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 struct FileDetails {
     name: String,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct FetchRequest {
     name: String,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct ShareDetails {
     name: String,
     url: String,
