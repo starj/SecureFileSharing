@@ -24,47 +24,73 @@ struct AuthResponse {
 
 type AppState = Arc<Mutex<UserData>>;
 
+fn handle_register(data: &mut UserData, username: &str, password: &str) -> HttpResponse {
+    if data.users.contains_key(username) {
+        return conflict_response();
+    } else {
+        data.users.insert(username.to_string(), password.to_string());
+        return success_register_response();
+    }
+}
+
+fn handle_login(data: &mut UserData, username: &str, password: &str) -> HttpResponse {
+    match data.users.get(username) {
+        Some(user_password) if user_password == password => {
+            let session_id = generate_session_id();
+            data.sessions.insert(session_id.clone(), username.to_string());
+            success_login_response(session_id)
+        }
+        _ => invalid_credentials_response(),
+    }
+}
+
+fn conflict_response() -> HttpResponse {
+    HttpResponse::Conflict().json(AuthResponse {
+        session_id: None,
+        message: "Username already exists".into(),
+    })
+}
+
+fn success_register_response() -> HttpResponse {
+    HttpResponse::Ok().json(AuthResponse {
+        session_id: None,
+        message: "User registered successfully".into(),
+    })
+}
+
+fn success_login_response(session_id: String) -> HttpResponse {
+    HttpResponse::Ok().json(AuthResponse {
+        session_id: Some(session_id),
+        message: "Login successful".into(),
+    })
+}
+
+fn invalid_credentials_response() -> HttpResponse {
+    HttpResponse::Unauthorized().json(AuthResponse {
+        session_id: None,
+        message: "Invalid username or password".into(),
+    })
+}
+
+fn generate_session_id() -> String {
+    "example_session_id".to_string()
+}
+
 #[post("/register")]
 async fn register(body: web::Json<LoginRequest>, state: web::Data<AppState>) -> impl Responder {
     let mut data = state.lock().unwrap();
-
-    if data.users.contains_key(&body.username) {
-        HttpResponse::Conflict().json(AuthResponse {
-            session_id: None,
-            message: "Username already exists".into(),
-        })
-    } else {
-        data.users.insert(body.username.clone(), body.password.clone());
-        HttpResponse::Ok().json(AuthResponse {
-            session_id: None,
-            message: "User registered successfully".into(),
-        })
-    }
+    handle_register(&mut data, &body.username, &body.password)
 }
 
 #[post("/login")]
 async fn login(body: web::Json<LoginRequest>, state: web::Data<AppState>) -> impl Responder {
     let mut data = state.lock().unwrap();
-
-    match data.users.get(&body.username) {
-        Some(password) if password == &body.password => {
-            let session_id = "example_session_id".to_string();
-            data.sessions.insert(session_id.clone(), body.username.clone());
-            HttpResponse::Ok().json(AuthResponse {
-                session_id: Some(session_id),
-                message: "Login successful".into(),
-            })
-        }
-        _ => HttpResponse::Unauthorized().json(AuthResponse {
-            session_id: None,
-            message: "Invalid username or password".into(),
-        }),
-    }
+    handle_login(&mut data, &body.username, &body.password)
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok(); 
+    dotenv().ok();
 
     let user_data = UserData {
         sessions: HashMap::new(),
