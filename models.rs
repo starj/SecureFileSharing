@@ -4,51 +4,55 @@ mod models {
 
     pub struct User {
         pub id: u32,
-        pub name: String,
+        pub username: String, // Changed from 'name' to 'username' for clarity
         pub email: String,
-        pub files: HashMap<u32, FileMetadata>,
+        pub owned_files: HashMap<u32, FileMetadata>, // Changed from 'files' to 'owned_files' for clarity
     }
 
     pub struct FileMetadata {
         pub id: u32,
-        pub name: String,
-        pub size: u64,
-        pub file_type: String,
-        pub owner_id: u32,
+        pub filename: String, // Changed from 'name' to 'filename' for clarity
+        pub byte_size: u64, // Changed from 'size' to 'byte_size' for clarity about the unit of measurement
+        pub content_type: String, // Changed from 'file_type' to 'content_type' for clarity and to avoid confusion with Rust's type system
+        pub owner_user_id: u32, // Changed from 'owner_id' to 'owner_user_id' for explicit relation to User
     }
 
     impl User {
-        pub fn new(id: u32, name: &str, email: &str) -> User {
+        // Constructor method now more clearly names parameters
+        pub fn new(user_id: u32, username: &str, user_email: &str) -> User {
             User { 
-                id, 
-                name: name.to_string(), 
-                email: email.to_string(),
-                files: HashMap::new(),
+                id: user_id, 
+                username: username.to_string(), 
+                email: user_email.to_string(),
+                owned_files: HashMap::new(),
             }
         }
 
-        pub fn add_file(&mut self, file: FileMetadata) {
-            self.files.insert(file.id, file);
+        // Method name remains unchanged but the parameter name is clearer
+        pub fn add_file(&mut self, new_file: FileMetadata) {
+            self.owned_files.insert(new_file.id, new_file);
         }
 
-        pub fn remove_file(&mut self, file_id: u32) {
-            self.files.remove(&file_id);
+        // Parameter name changed for clarity
+        pub fn remove_file_by_id(&mut self, target_file_id: u32) {
+            self.owned_files.remove(&target_file_id);
         }
     }
 
     impl FileMetadata {
-        pub fn new(id: u32, name: &str, size: u64, file_type: &str, owner_id: u32) -> FileMetadata {
+        // Constructor method with parameters named for clarity
+        pub fn new(file_id: u32, filename: &str, file_size: u64, content_type: &str, file_owner_user_id: u32) -> FileMetadata {
             FileMetadata { 
-                id, 
-                name: name.to_string(), 
-                size, 
-                file_type: file_type.to_string(),
-                owner_id,
+                id: file_id, 
+                filename: filename.to_string(), 
+                byte_size: file_size, 
+                content_type: content_type.to_string(),
+                owner_user_id: file_owner_user_id,
             }
         }
     }
 
-    pub fn db_connection_string() -> String {
+    pub fn get_database_connection_string() -> String { // Changed for clarity on the action performed
         dotenv::dotenv().ok();
 
         env::var("DATABASE_URL").unwrap_or_else(|_| "localhost".into())
