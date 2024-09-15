@@ -1,8 +1,8 @@
-use std::env;
 use rusqlite::{params, Connection, Result};
+use std::env;
 
-pub mod db_manager {
-    use super::*;
+mod db_manager {
+    use rusqlite::{params, Connection, Result};
 
     pub fn init_db() -> Result<Connection> {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -31,15 +31,12 @@ pub mod db_manager {
 
     pub fn get_item(conn: &Connection, id: i32) -> Result<Option<(i32, String, String)>> {
         let mut stmt = conn.prepare("SELECT * FROM items WHERE id = ?1")?;
-        let mut item_iter = stmt.query_map(params![id], |row| {
+        
+        let item_iter = stmt.query_map(params![id], |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?))
         })?;
 
-        if let Some(result) = item_iter.next() {
-            result
-        } else {
-            Ok(None)
-        }
+        item_iter.next().transpose()
     }
 
     pub fn update_item(conn: &Connection, id: i32, new_value: &str) -> Result<()> {
@@ -67,8 +64,9 @@ fn main() -> Result<()> {
     db_manager::create_table(&conn)?;
     db_manager::insert_item(&conn, "ExampleItem", "This is a test")?;
     
-    if let Some(item) = db_manager::get_item(&conn, 1)? {
-        println!("Retrieved item: {:?}", item);
+    match db_manager::get_item(&conn, 1)? {
+        Some(item) => println!("Retrieved item: {:?}", item),
+        None => println!("Item not found."),
     }
 
     Ok(())
