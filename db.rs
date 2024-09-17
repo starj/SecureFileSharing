@@ -3,15 +3,16 @@ use std::env;
 
 mod db_manager {
     use rusqlite::{params, Connection, Result};
+    use std::env;
 
-    pub fn init_db() -> Result<Connection> {
+    pub fn initialize_database_connection() -> Result<Connection> {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         Connection::open(database_url)
     }
 
-    pub fn create_table(conn: &Connection) -> Result<()> {
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS items (
+    pub fn create_files_table(connection: &Connection) -> Result<()> {
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS files (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
                 value TEXT
@@ -21,36 +22,36 @@ mod db_manager {
         Ok(())
     }
 
-    pub fn insert_item(conn: &Connection, name: &str, value: &str) -> Result<()> {
-        conn.execute(
-            "INSERT INTO items (name, value) VALUES (?1, ?2)",
-            params![name, value],
+    pub fn insert_file_record(connection: &Connection, file_name: &str, file_value: &str) -> Result<()> {
+        connection.execute(
+            "INSERT INTO files (name, value) VALUES (?1, ?2)",
+            params![file_name, file_value],
         )?;
         Ok(())
     }
 
-    pub fn get_item(conn: &Connection, id: i32) -> Result<Option<(i32, String, String)>> {
-        let mut stmt = conn.prepare("SELECT * FROM items WHERE id = ?1")?;
+    pub fn get_file_by_id(connection: &Connection, file_id: i32) -> Result<Option<(i32, String, String)>> {
+        let mut statement = connection.prepare("SELECT * FROM files WHERE id = ?1")?;
         
-        let item_iter = stmt.query_map(params![id], |row| {
+        let file_iter = statement.query_map(params![file_id], |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?))
         })?;
 
-        item_iter.next().transpose()
+        file_iter.next().transpose()
     }
 
-    pub fn update_item(conn: &Connection, id: i32, new_value: &str) -> Result<()> {
-        conn.execute(
-            "UPDATE items SET value = ?1 WHERE id = ?2",
-            params![new_value, id],
+    pub fn update_file_value(connection: &Connection, file_id: i32, new_file_value: &str) -> Result<()> {
+        connection.execute(
+            "UPDATE files SET value = ?1 WHERE id = ?2",
+            params![new_file_value, file_id],
         )?;
         Ok(())
     }
 
-    pub fn delete_item(conn: &Connection, id: i32) -> Result<()> {
-        conn.execute(
-            "DELETE FROM items WHERE id = ?1",
-            params![id],
+    pub fn delete_file_by_id(connection: &Connection, file_id: i32) -> Result<()> {
+        connection.execute(
+            "DELETE FROM files WHERE id = ?1",
+            params![file_id],
         )?;
         Ok(())
     }
@@ -59,14 +60,14 @@ mod db_manager {
 fn main() -> Result<()> {
     dotenv::dotenv().ok();
 
-    let conn = db_manager::init_db()?;
+    let database_connection = db_manager::initialize_database_connection()?;
     
-    db_manager::create_table(&conn)?;
-    db_manager::insert_item(&conn, "ExampleItem", "This is a test")?;
+    db_manager::create_files_table(&database_connection)?;
+    db_manager::insert_file_record(&database_connection, "ExampleFile", "This is a test content")?;
     
-    match db_manager::get_item(&conn, 1)? {
-        Some(item) => println!("Retrieved item: {:?}", item),
-        None => println!("Item not found."),
+    match db_manager::get_file_by_id(&database_connection, 1)? {
+        Some(file) => println!("Retrieved file: {:?}", file),
+        None => println!("File not found."),
     }
 
     Ok(())
