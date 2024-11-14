@@ -1,22 +1,24 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
-import FileUpload from "./FileUpload";
-import FileList from "./FileList";
-import FileShare from "./FileShare";
-class App extends React.Component {
+import UploadPage from "./UploadPage";
+import FilesOverviewPage from "./FilesOverviewPage";
+import ShareFilePage from "./ShareFilePage";
+
+class SecureFileSharingApp extends React.Component {
   render() {
     return (
       <Router>
         <div>
           <Switch>
-            <Route path="/upload" component={FileUpload} />
-            <Route path="/files" component={FileList} />
-            <Route path="/share" component={FileShare} />
-            <Route path="/" exact component={FileList} />
+            <Route path="/upload" component={UploadPage} />
+            <Route path="/files" component={FilesOverviewPage} />
+            <Route path="/share" component={ShareFilePage} />
+            <Route path="/" exact component={FilesOverviewPage} />
           </Switch>
         </div>
       </Router>
     );
   }
 }
-export default App;
+
+export default SecureFileSharingApp;
