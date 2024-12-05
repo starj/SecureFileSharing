@@ -18,9 +18,9 @@ const FileUpload = () => {
     formData.append('file', selectedFile);
 
     try {
-      const response = await axios.post(process.env.REACT_APP_UPLOAD_URL, formData, {
+      await axios.post(process.env.REACT_APP_UPLOAD_URL, formData, {
         headers: {
-          'Content-Type': 'multipart/form/data',
+          'Content-Type': 'multipart/form-data',
         },
       });
       alert('File uploaded successfully');
